@@ -2,6 +2,13 @@
 
 This repository housess the Infrastructure-as-Code (IaC) configurations for my home lab. The environment is designed to simuate real-world enterprise infrastructure and security practices in a fully isolated environment.
 
+## Directory Structure
+
+- /ansible
+  - /playbooks - playbooks for infrastructure provisioning
+  - /roles - roles for infrastructure provisioning
+- /diagrams - architectural and physical diagrams 
+
 # Usage (Coming Soon)
 
 This repo will include scripts and configurations for all aspects of my home lab.
@@ -13,6 +20,13 @@ Instructions and diagrams will be added as modules are developed.
 This repository is under active development.
 
 Current focus: hardware setup and configuration via Ansible
+
+## Planned Additions
+- Additional hardware configurations (hypervisor, switch, key vault)
+- Enterprise services (Active Directory, DNS, File Share)
+- GitOps-driven CI/CD integration
+- Detection engineering pipelines
+- Compliance-as-code modules
 
 # License
 
