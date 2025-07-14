@@ -1,0 +1,10 @@
+# Ignore ansible inventory and secrets
+*.vault
+*.retry
+*.log
+
+# Ignore OS/editor/system files
+.DS_Store
+*.swp
+.idea/
+.vscode/
