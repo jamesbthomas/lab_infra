@@ -90,7 +90,7 @@ Specifically, a folder structure, initialization play for the management node, a
 
 Folder Structure:
 ```
-~/ansible/
+/ansible/
 ├── bootstrap/
 │   └── mgmt-node-init.yml
 │   └── remove-unecessesary-users.yml
