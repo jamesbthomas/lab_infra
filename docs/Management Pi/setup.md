@@ -2,10 +2,10 @@
 
 ## Components
 
-- Raspberry Pi 4 - I used the CanaKit Raspberry Pi 4 4GB Starter Kit Pro (https://www.amazon.com/dp/B07V5JTMV9?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1)
+- Raspberry Pi 4 - I used the [CanaKit Raspberry Pi 4 4GB Starter Kit Pro](https://www.amazon.com/dp/B07V5JTMV9?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1)
   - This kit comes with a case, SD Card, power cord, power switch, heat sinks, fan, mini-HDMI cable, and even an adapter to plug your SD Card into another computer to update the OS. It's really everything you need to get started with a Raspberry Pi
-- (Optional) USB-C to USB-A Data Cable - I used the Amazon Basics cable rated for 10Gbps data transfer (https://www.amazon.com/dp/B01GGKYR2O?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1
-	-  A data-rated cable is useful for a number of things; namely allowing you to pass data from the Pi to a workstation powering it and back. However, I wasn't able to get it to work in my deployment, so this cable became option. I still used it instead of the provided wall plug power supply, so that way everything can run through my tower and I didn't have to get under my desk to plug more stuff in.
+- (Optional) USB-C to USB-A Data Cable - I used [this](https://www.amazon.com/dp/B01GGKYR2O?ref=ppx_yo2ov_dt_b_fed_asin_title&th=1) Amazon Basics cable rated for 10Gbps data transfer 
+	-  A data-rated cable is useful for a number of things; namely allowing you to pass data from the Pi to a workstation powering it and back. However, I wasn't able to get it to work in my deployment, so this cable became optionAL. I still used it instead of the provided wall plug power supply, so that way everything can run through my tower and I didn't have to get under my desk to plug more stuff in.
 
 ## High Level Process:
 
@@ -18,9 +18,9 @@
 
 # Step 1) Flash the OS
 
-The kit comes pre-installed with the latest version of Raspbian Buster - it's a fork of Debian 10 Buster specifically designed for Raspberry Pi. It's compatible with all Raspberry Pi models, but it's not the most recent version. Bullseye (the current legacy OS) and Bookworm (the current recommended OS) are both available for free at https://www.raspberrypi.com/software/operating-systems/
+The kit comes pre-installed with the latest version of Raspbian Buster - it's a fork of Debian 10 Buster specifically designed for Raspberry Pi. It's compatible with all Raspberry Pi models, but it's not the most recent version. Bullseye (the current legacy OS) and Bookworm (the current recommended OS) are both available for free on the [Raspberry Pi Site](https://www.raspberrypi.com/software/operating-systems/)
 
-You'll also need the \[Raspberry Pi Imager](https://downloads.raspberrypi.org/imager/imager\_latest.exe) to install the OS.
+You'll also need the [Raspberry Pi Imager](https://downloads.raspberrypi.org/imager/imager_latest.exe) to install the OS.
 
 Follow the prompts and accept the agreement to install the imager, launch it and you'll be able to select your Pi model (4), and your desired OS.
 
@@ -101,7 +101,6 @@ inventory.ini
 ```
 [local]
 localhost ansible_connection=local
-
 ```
 
 For the full YAMLs, refer to the git repo.
