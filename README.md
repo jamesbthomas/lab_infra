@@ -7,7 +7,10 @@ This repository housess the Infrastructure-as-Code (IaC) configurations for my h
 - /ansible
   - /playbooks - playbooks for infrastructure provisioning
   - /roles - roles for infrastructure provisioning
-- /diagrams - architectural and physical diagrams 
+- /diagrams - architectural and physical diagrams
+- /docs - general documentation, including manual setup steps
+  - /Management Pi - documentation on the Raspberry Pi Management Node
+  - /Vault Pi - documentation on the Raspberry Pi Vault Node
 
 # Usage (Coming Soon)
 
