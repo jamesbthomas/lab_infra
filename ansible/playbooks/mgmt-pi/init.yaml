@@ -1,6 +1,6 @@
 ---
 - name: Bootstrap the management pi
-  hosts: local
+  hosts: mgmt_pi
   become: true
   tasks:
   - name: Ensure basic packages are installed
@@ -13,6 +13,7 @@
       - rsyslog
       - iptables-persistent
       - minicom
+      - python3-serial
       state: present
       update_cache: true
     retries: 5

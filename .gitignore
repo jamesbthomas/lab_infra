@@ -1,10 +1,11 @@
-# Ignore ansible inventory and secrets
+# Ignore ansible inventory and secrets, and other internals
 inventory/
 group_vars/
 host_vars
 *.vault
 *.retry
 *.log
+*.cfg
 
 # Ignore OS/editor/system files
 .DS_Store
