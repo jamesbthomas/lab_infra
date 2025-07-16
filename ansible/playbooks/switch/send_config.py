@@ -5,7 +5,6 @@ import serial # For communicating with the switch over serial
 import sys # For pulling arguments off the command line
 import json # For processing the commands file that ansible generates
 import time # To ensure space between commands to match serial behavior
-import re # For REGEX matching to capture output
 
 def main():
   if len(sys.argv) != 4:
