@@ -12,6 +12,7 @@
       - gnupg
       - rsyslog
       - iptables-persistent
+      - minicom
       state: present
       update_cache: true
     retries: 5
