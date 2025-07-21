@@ -1,6 +1,4 @@
 # Ignore ansible inventory and secrets, and other internals
-inventory/
-group_vars/
 host_vars
 *.vault
 *.retry

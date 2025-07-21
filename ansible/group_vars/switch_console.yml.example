@@ -1,0 +1,17 @@
+# Example Group Vars file for protecting the admin password
+
+admin_username: <whatever you want the admin password to be>
+admin_password: <whatever you want the password to be>
+
+# This will store in plaintext by default
+## To store encrypted, you have two options
+## 1) Encrypt variables individually
+## 2) Encrypt the entire file
+
+## To generate an encrypted variable, you invoke the ansible-vault command with the encrypt_string option
+### Example: ansible-vault encrypt_string 'password' --name "admin_password"
+### The output is what needs to go into your yml file, and you can append it with >> file.yml
+
+## To encrypt the entire file, you invoke ansible-vault with the encrypt option
+### Example: ansible-vault encrypt <path to file>
+### Be careful though - this command encrypts the entire file on the disk and can only be read or edited with ansible commands
