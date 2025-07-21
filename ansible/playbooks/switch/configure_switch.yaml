@@ -17,7 +17,7 @@
     - command: ip domain-name indef.space
       expect: ''
 ## Configure console authentication
-    - command: username {{ admin_username}} privilege 15 secret {{ admin_password }}
+    - command: username {{ admin_username }} privilege 15 secret {{ admin_password }}
       expect: ''
     - command: line console 0
       expect: ''
