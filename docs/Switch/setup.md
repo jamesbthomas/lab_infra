@@ -2,11 +2,11 @@
 
 This document describes the manual steps needed to setup the core switch for the lab environment.
 It includes the following major steps:
-0) Setting up the management pi for console access to the switch
-1) Power On and Validate
-2) Setup Ansible for serial management
-3) Ansible Bootstrap
-4) Hardening
+1) Setting up the management pi for console access to the switch
+2) Power On and Validate
+3) Setup Ansible for serial management
+4) Ansible Bootstrap
+5) Hardening
 
 See [Upgrade](upgrade.md) for additional details on how to upgrade the iOS on the switch.
 
@@ -14,7 +14,7 @@ See [Upgrade](upgrade.md) for additional details on how to upgrade the iOS on th
 
 The current lab hardware is old and does not support some modern crypto implementations, including Ciscoo crypto modules provided via the `k9` IOS images. This guide will be updated to account for cryptographic options and additional remote management possibilities once the hardware supports it. Until then, we'll reduce the switch's attack surface by not enabling any kind of remote management and instead use the serial console for all of the administrative tasks.
 
-# Step 0) Enable console access via the management pi
+# Step 1) Enable console access via the management pi
 
 First and foremost - make sure you have a serial terminal softare installed. Common examples include `screen` and `minicom` - if you used the init script in this repository, then you should have already installed `minicom`.
 
@@ -40,7 +40,7 @@ sudo minicom -D /dev/ttyUSB<the number you saw> -b 9600
 
 For the hardware-inclined folks reading this, you can check out [this article](https://www.botasys.com/post/baud-rate-guide) for more details on the baud rate, how to calculate it, how to select or evaluate a baud rate, troubleshooting steps, and best practices.
 
-# Step 1) Prep and Setup
+# Step 2) Prep and Setup
 
 This step is pretty self-explanatory, but still important. Before you get too deep into the configurations and cabling, make sure you check the following:
 - Do you have a USB to Serial (aka, USB-to-DB9) cable? Is it plugged into the console port on your switch?
@@ -56,7 +56,7 @@ I also recommend running `write erase` and `reload` at this stage - it will wipe
 
 However, you will need to be at an `enable` prompt on your switch - a privileged mode that allows you to change the configuration. Most factory devices will have a default password, or you can check out [this guide](https://www.cisco.com/c/en/us/support/docs/switches/catalyst-4000-series-switches/21229-pswdrec-cat4000-supiii-21229.html?utm_source=chatgpt.com) for more details.
 
-# Step 2) Setup ansible over serial
+# Step 3) Setup ansible over serial
 
 Since we're using serial instead of ssh for configuration activities, we'll have to be a little creative.
 
@@ -69,9 +69,49 @@ There are three key pieces:
 - A playbook that uses the "expect" block that can handle the escalation request from the switch
 - A Python script that writes the commands to the serial device
 
-# Step 3) Write the bootstrap playbook
+For simplicity, we're going to focus on the ansible inventory and Python script, plus a simplified version of the playbook that validates everything works correctly. The swtch does not issue an authentication request at this stage, since it hasn't been configured to do so, so we'll focus on getting the framework setup to run the configuration via ansible.
 
+## Inventory
 
+The inventory entry for the switch will be pretty simple; it's just one line that tell ansible to run the playbook locally.
 
-# Step 4) Write the ansible hardening playbook
+```
+[switch_console]  ## This should match what you want to put in your playbooks under the host item
+local_console ansible_connection=local
+```
+
+## Python Script
+
+For a full version of the script, see [Send_Config.py](../../ansible/playbooks/switch/send_config.py).
+
+The script takes 3 arguments as input:
+- serial_dev - the serial device to send the commands through
+- baud_rate - the baud rate to use with the serial device
+- commands_json - a path to a file containinig the commands and expected responses from each command in JSON format
+
+A couple of important foot stomps on this script:
+- Sleep is important: Serial connections aren't as state-aware as, say, a TCP connection. There's reading a serial response doesn't necessarily wait for a response, it just reads and moves on, so ensuring there's enough time between commands helps stabilize the entire playbook.
+- Wake and Set the Terminal Length: the first thing to do once the serial connection is opened is wake up the device at the other end, usually by sending a new line character (`serial.write("\r\n").encode())`). Next, especially so for Cisco devices, you'll want to set the terminal length to 0 (`terminal length 0`), telling the device at the other end to return output immediately, instead of waiting for an entire page to become available.
+- Filtering the return values: The script reads every line until it hit a blank line, which includes the command that was run, the response to the command (if there is one), and the prompt for the next command. You can see my implementation of logic to filter the content read from the serial link in the `while` loop of the script.
+
+## Simplified Playbook
+
+As discussed above, we also need a simplified playbook that can show that everything is working end-to-end. This also works as a template for future playbooks that need to use the serial connection, as it includes all of the major functionality minus the `expect` item for the escalation challenge.
+
+See [serial_config_template.yaml](../../ansible/playbooks/switch/serial_config_template.yaml).
+
+A couple of footstomps here:
+- The `hosts` entry - this shoul match what you put between the square brackets in your inventory, otherwise you'll end up running the playbook on a device that you don't want to.
+- The `vars` section - this section, and specifically the `switch_commands` variable, sets the commands and expected return values.
+  - A couple of notes here:
+    - If the command does not generate any output, you still have to put `''` for the script to evaluate correctly.
+    - Especially when changing context (like with the `end` or `exit` commands), be sure you check your output manually first. Responses might come out of order, and the current logic does not do a very good job of handling these edge cases.
+- Creating the json file - this **must** always be the first task in the playbook, as it creates the file that gets passed into the script that tells it what commands to run
+- The `{{ playbook_dir }}` variable - this is a special variable that ansible generates at run time that's really useful for calling something in the same directory as the playbook. It includes the absolute path to the playbook being run, which is conveniently also the same directory as the `send_config.py` script.
+
+# Step 4) Write the bootstrap playbook
+
+Now that we've got a template playbook and validated that we can send configuraton commands to the switch over serial, let's go ahead and write the bootstrap playbook that sets up the initial configurations for the switch.
+
+# Step 5) Write the ansible hardening playbook
 
