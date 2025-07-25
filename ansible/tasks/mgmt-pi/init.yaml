@@ -13,7 +13,7 @@
       - rsyslog
       - iptables-persistent
       - minicom
-      - python3-serial
+      - python3-paramiko
       state: present
       update_cache: true
     retries: 5
