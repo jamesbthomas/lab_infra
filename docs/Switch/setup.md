@@ -3,16 +3,12 @@
 This document describes the manual steps needed to setup the core switch for the lab environment.
 It includes the following major steps:
 1) Setting up the management pi for console access to the switch
-2) Power On and Validate
-3) Setup Ansible for serial management
-4) Ansible Bootstrap
-5) Hardening
+2) Prep and Setup
+3) Configure the switch for SSH-based management via Ansible
+4) Write the functional configuration playbook
+5) Write the security configuration playbook
 
 See [Upgrade](upgrade.md) for additional details on how to upgrade the iOS on the switch.
-
-## Disclaimer
-
-The current lab hardware is old and does not support some modern crypto implementations, including Ciscoo crypto modules provided via the `k9` IOS images. This guide will be updated to account for cryptographic options and additional remote management possibilities once the hardware supports it. Until then, we'll reduce the switch's attack surface by not enabling any kind of remote management and instead use the serial console for all of the administrative tasks.
 
 # Step 1) Enable console access via the management pi
 
@@ -56,62 +52,72 @@ I also recommend running `write erase` and `reload` at this stage - it will wipe
 
 However, you will need to be at an `enable` prompt on your switch - a privileged mode that allows you to change the configuration. Most factory devices will have a default password, or you can check out [this guide](https://www.cisco.com/c/en/us/support/docs/switches/catalyst-4000-series-switches/21229-pswdrec-cat4000-supiii-21229.html?utm_source=chatgpt.com) for more details.
 
-# Step 3) Setup ansible over serial
+# 3) Configure the switch for SSH-based management via Ansible
 
-Since we're using serial instead of ssh for configuration activities, we'll have to be a little creative.
-
-Ansible assumes ssh by default, but we can still configure the Ansible to run the command locally can call a script which integrates better with the serial connection.
-
-This is a little bit backwards - one of the valuable parts of ansible is that it can be used to remotely manage almost anything, and we could just run the other scripts directly - but by forcing everything into ansible constructs, it makes it so that the administrative process remains the same, even if the underlying hardware (or approach) changes.
-
-There are three key pieces:
-- An ansible inventory that stays local
-- A playbook that uses the "expect" block that can handle the escalation request from the switch
-- A Python script that writes the commands to the serial device
-
-For simplicity, we're going to focus on the ansible inventory and Python script, plus a simplified version of the playbook that validates everything works correctly. The swtch does not issue an authentication request at this stage, since it hasn't been configured to do so, so we'll focus on getting the framework setup to run the configuration via ansible.
-
-## Inventory
-
-The inventory entry for the switch will be pretty simple; it's just one line that tell ansible to run the playbook locally.
+This step is completely manual - go ahead and console into the switch using the command from step 1 above and issue the following commands
 
 ```
-[switch_console]  ## This should match what you want to put in your playbooks under the host item
-local_console ansible_connection=local
+enable
+# Short form: en - this command elevates you to super user so you can execute privileged commands
+configure terminal
+# Short form: conf t - this command sends you to the configuration prompt where you can adjust the switch's configuration
+hostname <your hostname>
+# this sets the hostname of the device
+ip domain-name <your domain name>
+# sets the default domain name
+crypto key generate rsa modulus 2048
+# Creates a new RSA cryptographic key with a size of 2048 bits
+## Older IOS versions may have extra details to put in this command, so don't be afraid to use tab completion or the ? option to figure out what it's looking for
+ip ssh version 2
+# enables SSH version 2
+username admin privilege 15 secret <password>
+# Creates a user named "admin" with full privileges and the specified password
+line vty 0 4
+# this sends you into a sub-prompt to configure the authentication settings for the virutal terminal
+login local
+# Sets the AAA source for the virtual terminal to be the local device, as opposed to a RADIUS or TACACS server
+transport input ssh
+# Configures the terminal server to accept SSH as the incoming protocol
+exit
+# return to the configure terminal prompt
+vlan <number>
+# Creates a descriptive reference for the management VLAN and jumps you into the vlan configuration prompt; you should use your management VLAN for this
+name Management
+# sets the vlan to have the name Management
+exit
+# jump back to the configuration terminal prompt
+interface vlan <vlan number>
+# Creates a new vlan interface with the specific number and jumps you to the vlan interface configuration prompt; you should use your management VLAN for this
+ip address <ip address> <subnet mask>
+# This should match the VLAN you've designated for the management functions; in our case we're using VLAN 99 and a 10.0.0.0/8 IP space, so we'd assigned 10.0.99.<something> for the ip address and 255.255.255.0 as the subnet mask
+no shutdown
+# Short form: no shut; turns the interface on so it can switch traffic
+exit
+# jump out of the interface configuration prompt
+interface <interface reference>
+# jump into the configuration prompt for the interface your management pi is plugged into
+switchport mode access
+# Sets this to an access port for an endpoint, as opposed to a trunk port that can carry traffic from multiple hosts
+switchport access vlan <number>
+# Sets this interface to tag all traffic for a specific VLAN, in this case our management VLAN
+no shutdown
+# Same as last time, turns the interface on so it can switch packets
+end
+# Jump out of the configure prompt
+copy run start
+# copies the running configuration (which we just set) to the startup configuration so if the switch reboots it keeps the same configuration
 ```
 
-## Python Script
+Once you're done, make sure you set an IP address on the management Pi within the same subnet as your management VLAN so you can access it over SSH. I recommend using `sudo nmtui` to set the address on your Pi - my default installation didn't have some of the usual files in /etc/network/ that I look for on other distributions, and nmtui makes sure that the configurations get in the right spot
 
-For a full version of the script, see [Send_Config.py](../../ansible/playbooks/switch/send_config.py).
+To test your connection, try pinging the ip address you set on the VLAN interface, and try to SSH to that same IP address using the username and password you set.
+Note: If you're on older hardware (like me), you may have to explicitly allow deprecated key exchange, key types, and cipher modes. This is okay in a home lab, but is a serious risk for another production or public-facing components.
 
-The script takes 3 arguments as input:
-- serial_dev - the serial device to send the commands through
-- baud_rate - the baud rate to use with the serial device
-- commands_json - a path to a file containinig the commands and expected responses from each command in JSON format
+# 4) Write the functional configuration playbook
 
-A couple of important foot stomps on this script:
-- Sleep is important: Serial connections aren't as state-aware as, say, a TCP connection. There's reading a serial response doesn't necessarily wait for a response, it just reads and moves on, so ensuring there's enough time between commands helps stabilize the entire playbook.
-- Wake and Set the Terminal Length: the first thing to do once the serial connection is opened is wake up the device at the other end, usually by sending a new line character (`serial.write("\r\n").encode())`). Next, especially so for Cisco devices, you'll want to set the terminal length to 0 (`terminal length 0`), telling the device at the other end to return output immediately, instead of waiting for an entire page to become available.
-- Filtering the return values: The script reads every line until it hit a blank line, which includes the command that was run, the response to the command (if there is one), and the prompt for the next command. You can see my implementation of logic to filter the content read from the serial link in the `while` loop of the script.
+For the first play, create tasks that affirm the configurations we placed in manually. This helps enforce idempotency - a key characteristic of ansible - and helps stabilize the configuration so that if I decide to change something in those configs later I can do it via Ansible and the existing GitOps pipelines.
 
-## Simplified Playbook
+Checkout the current [playbook](../../ansible/playbooks/configure_switch.yml) for the full functional steps
 
-As discussed above, we also need a simplified playbook that can show that everything is working end-to-end. This also works as a template for future playbooks that need to use the serial connection, as it includes all of the major functionality minus the `expect` item for the escalation challenge.
-
-See [serial_config_template.yaml](../../ansible/playbooks/switch/serial_config_template.yaml).
-
-A couple of footstomps here:
-- The `hosts` entry - this shoul match what you put between the square brackets in your inventory, otherwise you'll end up running the playbook on a device that you don't want to.
-- The `vars` section - this section, and specifically the `switch_commands` variable, sets the commands and expected return values.
-  - A couple of notes here:
-    - If the command does not generate any output, you still have to put `''` for the script to evaluate correctly.
-    - Especially when changing context (like with the `end` or `exit` commands), be sure you check your output manually first. Responses might come out of order, and the current logic does not do a very good job of handling these edge cases.
-- Creating the json file - this **must** always be the first task in the playbook, as it creates the file that gets passed into the script that tells it what commands to run
-- The `{{ playbook_dir }}` variable - this is a special variable that ansible generates at run time that's really useful for calling something in the same directory as the playbook. It includes the absolute path to the playbook being run, which is conveniently also the same directory as the `send_config.py` script.
-
-# Step 4) Write the bootstrap playbook
-
-Now that we've got a template playbook and validated that we can send configuraton commands to the switch over serial, let's go ahead and write the bootstrap playbook that sets up the initial configurations for the switch.
-
-# Step 5) Write the ansible hardening playbook
+# 5) Write the security configuration playbook
 
