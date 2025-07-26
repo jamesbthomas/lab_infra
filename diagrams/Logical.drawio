@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0" version="28.0.6">
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/28.0.6 Chrome/138.0.7204.100 Electron/37.2.3 Safari/537.36" version="28.0.6">
   <diagram name="Page-1" id="yoQYSZhefAMHcPjo6ywg">
-    <mxGraphModel dx="1890" dy="1398" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="2323" dy="851" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -144,7 +144,7 @@
         <mxCell id="CJxo2ervFT9Eq8WJpUUf-58" value="VLAN40 - User" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="CJxo2ervFT9Eq8WJpUUf-46" vertex="1">
           <mxGeometry y="120" width="200" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="mW_gUQSu42ZMfpgdddVE-1" value="VLAN99 - Management" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" vertex="1" parent="CJxo2ervFT9Eq8WJpUUf-46">
+        <mxCell id="mW_gUQSu42ZMfpgdddVE-1" value="VLAN99 - Management" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="CJxo2ervFT9Eq8WJpUUf-46" vertex="1">
           <mxGeometry y="150" width="200" height="30" as="geometry" />
         </mxCell>
         <mxCell id="CJxo2ervFT9Eq8WJpUUf-50" value="Access: 99" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=7;" parent="1" vertex="1">
@@ -180,7 +180,7 @@
         <mxCell id="CJxo2ervFT9Eq8WJpUUf-63" value="10" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
           <mxGeometry x="-440" y="350" width="60" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="CJxo2ervFT9Eq8WJpUUf-64" value="Version/Date: v1.0 / 21 JUL 2025&lt;div&gt;Scope: High-level logical topology and VLAN scaffolding&lt;/div&gt;&lt;div&gt;Last Edited By: James Thomas&lt;br&gt;https://github.com/integrateddefense/lab_infra&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;spacingBottom=0;" parent="1" vertex="1">
+        <mxCell id="CJxo2ervFT9Eq8WJpUUf-64" value="Version/Date: v1.1 / 26 JUL 2025&lt;div&gt;Scope: High-level logical topology and VLAN scaffolding&lt;/div&gt;&lt;div&gt;Last Edited By: James Thomas&lt;br&gt;https://github.com/integrateddefense/lab_infra&lt;/div&gt;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;spacingBottom=0;" parent="1" vertex="1">
           <mxGeometry x="-330" y="810" width="330" height="100" as="geometry" />
         </mxCell>
         <mxCell id="CJxo2ervFT9Eq8WJpUUf-65" value="&lt;i&gt;TRUNK&lt;/i&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
@@ -204,7 +204,7 @@
             <mxPoint x="-340" y="320" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="CJxo2ervFT9Eq8WJpUUf-69" value="Access: 30" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=7;" parent="1" vertex="1">
+        <mxCell id="CJxo2ervFT9Eq8WJpUUf-69" value="Access: 10" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=7;" parent="1" vertex="1">
           <mxGeometry x="-485" y="170" width="60" height="30" as="geometry" />
         </mxCell>
       </root>
