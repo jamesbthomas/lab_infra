@@ -117,7 +117,11 @@ Note: If you're on older hardware (like me), you may have to explicitly allow de
 
 For the first play, create tasks that affirm the configurations we placed in manually. This helps enforce idempotency - a key characteristic of ansible - and helps stabilize the configuration so that if I decide to change something in those configs later I can do it via Ansible and the existing GitOps pipelines.
 
-Checkout the current [playbook](../../ansible/playbooks/configure_switch.yml) for the full functional steps
+Check out the current [playbook](../../ansible/playbooks/switch/configure_switch.yml) for the full functional setup.
 
 # 5) Write the security configuration playbook
 
+TBD - will be completed once the full infrastructure is in place
+
+[core_switch]
+switch ansible_host=10.0.99.10

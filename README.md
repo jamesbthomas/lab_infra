@@ -5,7 +5,7 @@ This repository housess the Infrastructure-as-Code (IaC) configurations for my h
 ## Directory Structure
 
 - /ansible
-  - /playbooks - playbooks for infrastructure provisioning
+  - /tasks- tasks for infrastructure provisioning
   - /roles - roles for infrastructure provisioning
 - /diagrams - architectural and physical diagrams
 - /docs - general documentation, including manual setup steps

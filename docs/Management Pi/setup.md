@@ -86,15 +86,19 @@ ansible --version
 
 # Step 5) Create Initial Ansible Resources
 
-Specifically, a folder structure, initialization play for the management node, and inventory.
+Specifically, a folder structure, initialization play for the management node, and inventory. In this environment, we went with the wrapper playbook model
 
 Folder Structure:
 ```
-/ansible/
-├── bootstrap/
-│   └── mgmt-node-init.yml
-│   └── remove-unecessesary-users.yml
-├── inventory.ini
+ansible/
+└── run_init_mgmt_pi.yml
+├── tasks/
+    ├── mgmt-pi/
+        └── init_mgmt_pi.yml
+├── inventory/
+    └──inventory.ini
+├── group_vars/
+├── host_vars/
 ```
 
 inventory.ini
