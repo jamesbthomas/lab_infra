@@ -3,4 +3,4 @@
   gather_facts: no
 
   tasks:
-  - import_tasks: tasks/switch/configure_switch.yml
+  - import_tasks: tasks/switch/configure.yml

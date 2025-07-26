@@ -1,0 +1,7 @@
+---
+- name: Bootstrap the management pi
+  hosts: mgmt_pi
+  become: true
+
+  tasks:
+  - import_tasks: tasks/mgmt-pi/init.yml
