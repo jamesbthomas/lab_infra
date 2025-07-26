@@ -122,13 +122,22 @@
     - switchport access vlan 40
     - no shutdown
 
-- name: Configure Router port
+- name: Configure Router External Link
   cisco.ios.ios_config:
     parents: interface gigabitEthernet 1/19
     lines:
     - description External Router
     - switchport mode access
     - switchport access vlan 10
+    - no shutdown
+
+- name: Configure Router OOB Mgmt
+  cisco.ios.ios_config:
+    parents: interface gigabitEthernet 1/43
+    lines:
+    - description Router
+    - switchport mode access
+    - switchport access vlan 99
     - no shutdown
 
 - name: Configure James Tower port
@@ -201,7 +210,6 @@
   - 1/38
   - 1/40
   - 1/42
-  - 1/43
   - 1/44
   - 1/46
   - 1/48
