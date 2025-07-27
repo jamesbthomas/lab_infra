@@ -11,3 +11,6 @@
 
 # Draw.io backup files
 *.bkp
+
+# Protected files
+IPAM.xlsx
