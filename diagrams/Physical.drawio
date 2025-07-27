@@ -57,7 +57,7 @@
         <mxCell id="1WeZYifnovVVl7Edg_Gf-17" value="Switch" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=8;" parent="1" vertex="1">
           <mxGeometry x="494" y="177" width="56" height="12" as="geometry" />
         </mxCell>
-        <mxCell id="1WeZYifnovVVl7Edg_Gf-18" value="Shelf (RV260+VaultPi)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=8;" parent="1" vertex="1">
+        <mxCell id="1WeZYifnovVVl7Edg_Gf-18" value="Shelf (VP2420+VaultPi)" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=8;" parent="1" vertex="1">
           <mxGeometry x="494" y="148" width="86" height="12" as="geometry" />
         </mxCell>
         <mxCell id="1WeZYifnovVVl7Edg_Gf-19" value="" style="group" parent="1" vertex="1" connectable="0">
