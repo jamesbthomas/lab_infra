@@ -67,21 +67,21 @@ Next, let's get some of the key dependencies for the management node
 
 # Step 4) Install Ansible
 
-Start by installing ansible for the local user only - this avoids installing the executables for the entire system, nesting nicely with the principle of Least Functionality.
-```
-python3 -m pip install --user ansible --break-system-packages
-# --user keeps Ansible isolated to the current user
-# --break-system-packages is an explicit acknowledgement of the risk involved with installing packages to user space or isntalling system-wide packages through the OS's non-default mechanism
-## It's known as PEP 668 protection, which prevents pip install from modifying key packages and is standard practice when Python is managed by the OS. It's common on Debian packages (which Raspberry Pi is based on) since 2023.
-## Since we're installing to the user space, the risk to the overall system is minimal so we'll just accept the risk here
+This is a bit nuanced... the default Debian repos that ship with Raspberry Pi are generally several versions behind the most current version of ansible. As of July 2025, ansible-core was at 2.18, but apt could only find version 2.14 by default.
 
-echo "export PATH=$PATH:~/.local/bin" >> ~/.bashrc
-# Ensures Ansible ends up in your path so you can call it directly
-## ~/.local/bin is the binary directory in the user's home directory - expected since we installed ansible in user space and not for the system as a whole
-source ~/.bashrc
-# Applies the new path without you having to log out and back in
+Fortunately, Ansible is python based, and python package installers like pip and pipx can get the cutting edge of ansible. This guide will focus on installing with pipx - a pip variation that installs every downloaded package into it's own virtual environment. Python virtual environments allow you to segment packages from the main system, supporting code portability and explicit identification of dependencies.
+
+```
+sudo apt install pipx
+# Installs the pipx binaries
+pipx ensurepath
+# Ensures the pipx binaries are in your path
+pipx install ansible-core
+# Installs ansible into a new venv specifically for it
+# Note: This specifically installs (and makes available) the core components of ansible, like ansible-playbook, ansible-vault, etc.
+# It doesn't install any packages; but in keeping with the principle of least functionality, it allows us to manage the modules that we need to use more discreetly
 ansible --version
-# Confirms that ansible was installed correctly
+# confirms ansible is installed and in your path
 ```
 
 # Step 5) Create Initial Ansible Resources
