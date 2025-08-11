@@ -38,7 +38,9 @@ This step will vary greatly depending on your hardware and BIOS, but generally f
 
 # Step 4) Manual ProxMox Installation
 
+This step is self-explanatory - just follow the prompts and you're good to go.
 
+Make sure you select the right interface for your management interface as well; this is different from the iDRAC interface, but important for making sure you can access the management interface.
 
 # Step 5) Ansible Configuration
 
