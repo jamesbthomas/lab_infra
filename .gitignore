@@ -9,8 +9,9 @@
 .idea/
 .vscode/
 
-# Draw.io backup files
+# Draw.io files
 *.bkp
+*.dtmp
 
 # Protected files
 IPAM.xlsx
