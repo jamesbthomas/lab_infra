@@ -82,6 +82,8 @@ pipx install ansible-core
 # It doesn't install any packages; but in keeping with the principle of least functionality, it allows us to manage the modules that we need to use more discreetly
 ansible --version
 # confirms ansible is installed and in your path
+pipx inject ansible-core ncclient lxml jxmlease
+# Injects dependencies that make working with Juniper switches easier
 ```
 
 # Step 5) Create Initial Ansible Resources

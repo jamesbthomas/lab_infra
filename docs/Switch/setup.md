@@ -42,76 +42,77 @@ This step is pretty self-explanatory, but still important. Before you get too de
 - Do you have a USB to Serial (aka, USB-to-DB9) cable? Is it plugged into the console port on your switch?
 - Does the switch have power? Does it POST correctly?
 
-Once your switch is powered on and running, go back to your serial terminal and make sure you get a prompt for your switch (usually indicated by something like `<switch hostname>>`).
+Once your switch is powered on and running, go back to your serial terminal and make sure you get a prompt for your switch.
 
-Once all of that is good, you can use the command `show version` to check the current version of the OS on your switch, and determine if you need to follow the steps in [this document](upgrade.md) to upgrade to a more recent version.
-
-## Recommendation and Password Recovery
-
-I also recommend running `write erase` and `reload` at this stage - it will wipe any existing configurations from the switch, allowing you to start with a clean slate.
-
-However, you will need to be at an `enable` prompt on your switch - a privileged mode that allows you to change the configuration. Most factory devices will have a default password, or you can check out [this guide](https://www.cisco.com/c/en/us/support/docs/switches/catalyst-4000-series-switches/21229-pswdrec-cat4000-supiii-21229.html?utm_source=chatgpt.com) for more details.
+Note: If you get a prompt that looks like `root@:RE:0%`, that means your switch didn't finish booting into the CLI. Not a problem, but you need to issue the `cli` command to boot the Junos CLI, and then you'll see a more typical switch prompt.
 
 # 3) Configure the switch for SSH-based management via Ansible
 
-This step is completely manual - go ahead and console into the switch using the command from step 1 above and issue the following commands
+This step is completely manual - go ahead and console into the switch using the command from step 1 above and issue the following commands.
 
 ```
-enable
-# Short form: en - this command elevates you to super user so you can execute privileged commands
-configure terminal
-# Short form: conf t - this command sends you to the configuration prompt where you can adjust the switch's configuration
-hostname <your hostname>
-# this sets the hostname of the device
-ip domain-name <your domain name>
-# sets the default domain name
-crypto key generate rsa modulus 2048
-# Creates a new RSA cryptographic key with a size of 2048 bits
-## Older IOS versions may have extra details to put in this command, so don't be afraid to use tab completion or the ? option to figure out what it's looking for
-ip ssh version 2
-# enables SSH version 2
-username admin privilege 15 secret <password>
-# Creates a user named "admin" with full privileges and the specified password
-line vty 0 4
-# this sends you into a sub-prompt to configure the authentication settings for the virutal terminal
-login local
-# Sets the AAA source for the virtual terminal to be the local device, as opposed to a RADIUS or TACACS server
-transport input ssh
-# Configures the terminal server to accept SSH as the incoming protocol
+configure
+# Enters the JUNOS configuration prompt
+edit system
+# Enters the configuration block for the system
+set host-name switch
+# Sets the hostname of the device to switch (default is Amnesiac)
+set root-authentication no-public-keys
+# Disables key-based authentication for the root user
+set root-authentication plain-text-password
+# prompts for a password to set for the root user
+set login user ansible authentication plain-text-password
+# creates the user 'ansible' and prompts for a password to set
+set login user ansible class super-user
+# Sets the permissions for the ansible user, giving it complete access
+set services ssh
+# enables the default SSH configuration
+set services ssh protocol-version v2
+# forces the use of SSHv2
+set services ssh root-login deny
+# Prevents the root user from being used for SSH logins
+set services netconf ssh
+# Allows you to use NETCONF over SSH to configure the switch (how ansible interacts with Juniper)
+up
+# moves one layer out of the current edit context, in this case back to the highest level
+edit vlans
+# Move into the VLAN hierarchy
+set mgmt vlan-id <ID>
+# creates a VLAN named 'mgmt' tagged with the provided VLAN ID
+set mgmt description "OOB Management"
+# Sets the VLAN description to "OOB Management"
+set mgmt l3-interface vlan.<ID>
+# Sets the VLAN to us the layer3 interface called "irb.<your vlan ID>" which we create next
+up
+# return to the base hierarchy
+edit interfaces vlan unit 99 family inet
+# enter the interfaces hierarchy and edit the inet family of the IRB unit associated with the VLAN you just created
+## same is doing:
+### edit interfaces
+### edit irb.<ID>
+### edit family
+### edit inet
+set address <switch management IP>/24
+# Sets the IP address for the switch on that interface; this is NOT the network or gateway
 exit
-# return to the configure terminal prompt
-vlan <number>
-# Creates a descriptive reference for the management VLAN and jumps you into the vlan configuration prompt; you should use your management VLAN for this
-name Management
-# sets the vlan to have the name Management
+# Back out to the root of the hierarchy
+edit interfaces <interface id>
+# Enters the edit hierarchy for the selected interface; this should match your management pi
+set description "<interface description>"
+# Sets the description
+edit unit 0 family ethernet-switching
+# Enters the hierarchy for ethernet switching on the selected port
+set port-mode access vlan members mgmt
+# Sets the port to access mode for management VLAN
 exit
-# jump back to the configuration terminal prompt
-interface vlan <vlan number>
-# Creates a new vlan interface with the specific number and jumps you to the vlan interface configuration prompt; you should use your management VLAN for this
-ip address <ip address> <subnet mask>
-# This should match the VLAN you've designated for the management functions; in our case we're using VLAN 99 and a 10.0.0.0/8 IP space, so we'd assigned 10.0.99.<something> for the ip address and 255.255.255.0 as the subnet mask
-no shutdown
-# Short form: no shut; turns the interface on so it can switch traffic
-exit
-# jump out of the interface configuration prompt
-interface <interface reference>
-# jump into the configuration prompt for the interface your management pi is plugged into
-switchport mode access
-# Sets this to an access port for an endpoint, as opposed to a trunk port that can carry traffic from multiple hosts
-switchport access vlan <number>
-# Sets this interface to tag all traffic for a specific VLAN, in this case our management VLAN
-no shutdown
-# Same as last time, turns the interface on so it can switch packets
-end
-# Jump out of the configure prompt
-copy run start
-# copies the running configuration (which we just set) to the startup configuration so if the switch reboots it keeps the same configuration
+commit
+# commits all staged changes to the running config; alternatively run "commit check" and you'll get a syntax check of your planned config without making any changes
 ```
 
 Once you're done, make sure you set an IP address on the management Pi within the same subnet as your management VLAN so you can access it over SSH. I recommend using `sudo nmtui` to set the address on your Pi - my default installation didn't have some of the usual files in /etc/network/ that I look for on other distributions, and nmtui makes sure that the configurations get in the right spot
 
 To test your connection, try pinging the ip address you set on the VLAN interface, and try to SSH to that same IP address using the username and password you set.
-Note: If you're on older hardware (like me), you may have to explicitly allow deprecated key exchange, key types, and cipher modes. This is okay in a home lab, but is a serious risk for another production or public-facing components.
+Note: If you're on older hardware, you may have to explicitly allow deprecated key exchange, key types, and cipher modes. This is okay in a home lab, but is a serious risk for any production or public-facing components.
 
 # 4) Write the functional configuration playbook
 
@@ -122,6 +123,3 @@ Check out the current [playbook](../../ansible/playbooks/switch/configure_switch
 # 5) Write the security configuration playbook
 
 TBD - will be completed once the full infrastructure is in place
-
-[core_switch]
-switch ansible_host=10.0.99.10
