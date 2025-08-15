@@ -1,229 +1,200 @@
 # Configures the switch for use in the lab environment
 ## Implement everything that we set manually during initial setup; enforces idempotency
-- name: Set hostname and domain
-  cisco.ios.ios_config:
-    lines:
-    - hostname switch
-    - ip domain-name indef.space
+## Configs not implemented to avoid rollback issues:
+## - set root password
+## - configure ansible user
 
-- name: Enable SSH Version 2
-  cisco.ios.ios_config:
+- name: Set hostname and domain and grab a backup
+  junipernetworks.junos.junos_config:
+    backup: true
     lines:
-    - ip ssh version 2
+    - set system host-name switch
+    - set system domain-name indef.space
 
-- name: Configure virtual terminal for SSH
-  cisco.ios.ios_config:
-    parents: line vty 0 4
+- name: Configure root authentication
+  junipernetworks.junos.junos_config:
     lines:
-    - login local
-    - transport input ssh
+    - set system root-authentication no-public-keys
+
+- name: Configure SSH
+  junipernetworks.junos.junos_config:
+    lines:
+    - set system services ssh
+    - set system services ssh protocol-version v2
+    - set system services ssh root-login deny
+    - set system services netconf ssh
 
 - name: Create management VLAN
-  cisco.ios.ios_config:
-    parents: vlan 99
+  junipernetworks.junos.junos_config:
     lines:
-    - name Management
+    - set vlans mgmt vlan-id 99
+    - set vlans mgmt description "OOB Management"
+    - set vlans mgmt l3-interface vlan.99
 
 - name: Set interface VLAN 99
-  cisco.ios.ios_config:
-    parents: interface vlan 99
+  junipernetworks.junos.junos_config:
     lines:
-    - ip address 10.0.99.10 255.255.255.0
-    - no shutdown
+    - set interfaces vlan unit 99 family inet address 10.0.99.10/24
 
 - name: Configure Mgmt-Pi Port
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/15
+  junipernetworks.junos.junos_config:
     lines:
-    - switchport mode access
-    - switchport access vlan 99
-    - description Mgmt-Pi
-    - no shutdown
+    - set interfaces ge0/0/39 description "Management Pi"
+    - set interfaces ge0/0/39 unit 0 family ethernet-switching port-mode access vlan members mgmt
+
+## END BASELINE CONFIG ##
 
 ## Restrict access to the management terminal
-- name: Create MGMT_ONLY ACL
-  cisco.ios.ios_config:
-    parents: ip access-list standard MGMT_ONLY
+- name: Create Firewall Filter for the management interface
+  junipernetworks.junos.junos_config:
     lines:
-    - permit 10.0.99.0 0.0.0.255
-    - deny any
-
-- name: Apply MGMT_ONLY ACL to VLAN99 Interface
-  cisco.ios.ios_config:
-    parents: line vty 0 4
-    lines:
-    - access-class MGMT_ONLY in
+    - set firewall family inet filter mgmt_only term allow_mgmt from source-address 10.0.99.0/24
+    - set firewall family inet filter mgmt_only term allow_mgmt from protocol tcp
+    - set firewall family inet filter mgmt_only term allow_mgmt from destination-port ssh
+    - set firewall family inet filter mgmt_only term allow_mgmt from destination-port 830
+    - set firewall family inet filter mgmt_only term allow_mgmt then accept
+    - set firewall family inet filter mgmt_only term allow_icmp from source-address 10.0.99.0/24
+    - set firewall family inet filter mgmt_only term allow_icmp from protocol icmp
+    - set firewall family inet filter mgmt_only term allow_icmp from icmp-type echo-request
+    - set firewall family inet filter mgmt_only term allow_icmp then allow
+    - set firewall family inet filter mgmt_only term default_deny then discard
 
 ## Create the VLANs and interfaces
 - name: Create core VLAN
-  cisco.ios.ios_config:
-    parents: vlan 20
+  junipernetworks.junos.junos_config:
     lines:
-    - name Core
+    - set vlans core 20
+    - set vlans core description "Core Services"
 
 - name: Create user VLAN
-  cisco.ios.ios_config:
-    parents: vlan 40
+  junipernetworks.junos.junos_config:
     lines:
-    - name User
+    - set vlans user 40
+    - set vlans user description "User Space"
 
 - name: Create DMZ VLAN
-  cisco.ios.ios_config:
-    parents: vlan 30
+  junipernetworks.junos.junos_config:
     lines:
-    - vlan 30
-    - name DMZ
+    - set vlans dmz 30
+    - set vlans dmz description "DMZ"
 
 - name: Create External VLAN
-  cisco.ios.ios_config:
-    parents: vlan 10
+  junipernetworks.junos.junos_config:
     lines:
-    - name External
+    - set vlans ext 10
+    - set vlans ext "External"
+
+- name: Create Open VLAN
+  junipernetworks.junos.junos_config:
+    lines:
+    - set vlans open 1
+    - set vlans open "Open"
 
 ## Configure access and trunk ports
 - name: Configure iDRAC ports
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet {{ item.port }}
+  junipernetworks.junos.junos_config:
     lines:
-    - description Server{{ item.server }} iDRAC
-    - switchport mode access
-    - switchport access vlan 99
-    - no shutdown
+    - set interfaces ge0/0/{{ item.port }} description "Server{{ item.server }} iDRAC"
+    - set interfaces ge0/0/{{ item.port }} unit 0 family ethernet-switching port-mode access vlan members mgmt
   loop:
-  - { port: "1/45", server: "1" }
-  - { port: "1/47", server: "2" }
+  - { port: "44", server: "1" }
+  - { port: "46", server: "2" }
 
 - name: Configure Compute MGMT NICs
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet {{ item.port }}
+  junipernetworks.junos.junos_config:
     lines:
-    - description Server{{ item.server }} MGMT NIC
-    - switchport mode access
-    - switchport access vlan 99
-    - no shutdown
+    - set interfaces ge0/0/{{ item.port }} description "Server{{ item.server }} MGMT NIC"
+    - set interfaces ge0/0/{{ item.port }} unit 0 family ethernet-switching port-mode access vlan members mgmt
   loop:
-  - { port: "1/46", server: "1" }
-  - { port: "1/48", server: "2" }
+  - { port: "40", server: "1" }
+  - { port: "42", server: "2" }
 
 - name: Configure Compute Data NICs
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet {{ item.port }}
+  junipernetworks.junos.junos_config:
     lines:
-    - description Server{{ item.server }} NIC{{ item.nic }}
-    - switchport trunk encapsulation dot1q
-    - switchport mode trunk
-    - switchport trunk encapsulation dot1q
-    - switchport trunk allowed vlan 10,20,30,40
-    - no shutdown
+    - set interfaces ge0/0/{{ item.port }} description "Server{{ item.server }} NIC{{ item.nic }}"
+    - set interfaces ge0/0/{{ item.port }} unit 0 family ethernet-switching port-mode trunk vlan members [ ext core dmz user ]
   loop:
-  - { port: "1/27", server: "1", nic: "4"}
-  - { port: "1/29", server: "1", nic: "3"}
-  - { port: "1/35", server: "2", nic: "4"}
-  - { port: "1/37", server: "2", nic: "3"}
+  - { port: "26", server: "1", nic: "4"}
+  - { port: "28", server: "1", nic: "3"}
+  - { port: "34", server: "2", nic: "4"}
+  - { port: "36", server: "2", nic: "3"}
 
-- name: Configure WAP port
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/21
+- name: Configure WAP ports
+  junipernetworks.junos.junos_config:
     lines:
-    - description WAP
-    - switchport mode access
-    - switchport access vlan 40
-    - no shutdown
+    - set interfaces ge0/0/38 description "WAP Management"
+    - set interfaces ge0/0/38 unit 0 family ethernet-switching port-mode access vlan members mgmt
+    - set interfaces ge0/0/4 description "WAP Users"
+    - set interfaces ge0/0/4 unit 0 family ethernet-switching port-mode access vlan members user
 
-- name: Configure Router External Link
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/19
+- name: Configure Router ports
+  junipernetworks.junos.junos_config:
     lines:
-    - description External Router
-    - switchport mode access
-    - switchport access vlan 10
-    - no shutdown
-
-- name: Configure Router OOB Mgmt
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/43
-    lines:
-    - description Router
-    - switchport mode access
-    - switchport access vlan 99
-    - no shutdown
+    - set interfaces ge0/0/16 desccription "External Router"
+    - set interfaces ge0/0/16 unit 0 family ethernet-switching port-mode access vlan members ext
+    - set interfaces ge0/0/41 description "Router OOB"
+    - set interfaces ge0/0/41 unit 0 family ethernet-switching port-mode access vlan members mgmt
+    - set interfaces ge0/0/6 description "Unprotected Router"
+    - set interfaces ge0/0/6 unit 0 family ethernet-switching port-mode access vlan members open
 
 - name: Configure James Tower port
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/1
+  junipernetworks.junos.junos_config:
     lines:
-    - description James Tower
-    - switchport mode access
-    - switchport access vlan 40
-    - no shutdown
+    - set interfaces ge0/0/0 description "James Tower"
+    - set interfaces ge0/0/0 unit 0 family ethernet-switching port-mode access vlan members user
 
 - name: Configure Vix Tower port
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/3
+  junipernetworks.junos.junos_config:
     lines:
-    - description Vix Tower
-    - switchport mode access
-    - switchport access vlan 40
-    - no shutdown
+    - set interfaces ge0/0/2 description "Vix Tower"
+    - set interfaces ge0/0/2 unit 0 family ethernet-switching port-mode access vlan members user
 
-- name: Configure Vault port
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/17
+- name: Configure Vault Pi port
+  junipernetworks.junos.junos_config:
     lines:
-    - description Vault Pi
-    - switchport mode access
-    - switchport access vlan 20
-    - no shutdown
-
-- name: Configure backup unprotected port
-  cisco.ios.ios_config:
-    parents: interface gigabitEthernet 1/7
-    lines:
-    - description backup unprotected port
-    - switchport mode access
-    - switchport access vlan 10
-    - no shutdown
+    - set interfaces ge0/0/16 description "Vault Pi"
+    - set interfaces ge0/0/16 unit 0 family ethernet-switching port-mode access vlan members core
 
 - name: Disable unused ports
-  cisco.ios.ios_config:
+  junipernetworks.junos.junos_config:
     parents: interface gigabitEthernet {{ item }}
     lines:
-    - description ** DISABLED **
+    - set interfaces ge0/0/{{ item }} disable
+    - set interfaces ge0/0/{{ item }} description "** DISABLED **"
     - shutdown
   loop:
-  - 1/2
-  - 1/4
-  - 1/5
-  - 1/6
-  - 1/8
-  - 1/9
-  - 1/10
-  - 1/11
-  - 1/12
-  - 1/13
-  - 1/14
-  - 1/16
-  - 1/18
-  - 1/20
-  - 1/22
-  - 1/23
-  - 1/24
-  - 1/25
-  - 1/26
-  - 1/28
-  - 1/30
-  - 1/31
-  - 1/32
-  - 1/33
-  - 1/34
-  - 1/36
-  - 1/38
-  - 1/39
-  - 1/40
-  - 1/41
-  - 1/42
-  - 1/44
+  - 1
+  - 3
+  - 5
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 17
+  - 18
+  - 19
+  - 21
+  - 22
+  - 23
+  - 25
+  - 27
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 35
+  - 37
+  - 43
+  - 45
+  - 47
 
 - name: save config
-  cisco.ios.ios_config:
-    save_when: modified
+  junipernetworks.junos.junos_config:
+    confirm_commit: true
