@@ -1,0 +1,10 @@
+# Handlers for the baseline_proxmox role
+
+- name: Reload sshd
+  ansible.builtin.service:
+    name: sshd
+    state: reloaded
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true

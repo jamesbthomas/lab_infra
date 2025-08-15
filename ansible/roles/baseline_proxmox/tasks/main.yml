@@ -1,0 +1,81 @@
+---
+# Assumes the bootstrap_ansible play has already been run and key-based auth is configured
+
+# SSH Config updates
+- name: Set Global SSH Restrictions
+  ansible.builtin.blockinfile:
+    prepend_newline: true
+    append_newline: true
+    path: /etc/ssh/sshd_config
+    block: |
+      AllowTcpForwarding no
+      PermitTunnel no
+      AllowAgentForwarding no
+      X11Forwarding no
+  notify: Reload sshd
+
+# TODO: disable root login over ssh once alternate breakglass account is setup
+
+- name: Set {{ ansible_user }} SSH Restrictions
+  ansible.builtin.blockinfile:
+    prepend_newline: true
+    append_newline: true
+    path: /etc/ssh/sshd_config
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: ansible user restrictions"
+    block: "{{ lookup('template','sshd_match_block.j2') }}"
+  notify: Reload sshd
+
+# Ansible User Settings
+- name: Enforce no password for {{ ansible_user }}
+  ansible.builtin.command:
+    cmd: "passwd -d {{ ansible_user }}"
+
+- name: Ensure {{ ansible_user }} has sudo access
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/{{ ansible_user }}
+    line: "{{ ansible_user }} ALL=(ALL) NOPASSWD:ALL"
+
+# ProxMox repo settings
+- name: Disable proxmox enterprise repositories
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/pve-enterprise.list
+    search_string: deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise
+    line: "# deb https://enterprise.proxmox.com/debian/pve bookworm pve-enterprise"
+    state: present
+  notify: Update apt cache
+- name: Disable ceph enterprise repository
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/ceph.list
+    search_string: deb https://enterprise.proxmox.com/debian/ceph-quincy bookworm enterprise
+    line: "# deb https://enterprise.proxmox.com/debian/ceph-quincy bookworm enterprise"
+    state: present
+  notify: Update apt cache
+
+- name: Enable proxmox no-subscription repository
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/pve-no-subscription.list
+    line: deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Update apt cache
+- name: Enable ceph no-subscription repository
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/ceph-no-subscription.list
+    line: deb http://download.proxmox.com/debian/ceph-quincy bookworm no-subscription
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Update apt cache
+
+# Install packages
+- name: Ensure Sudo is installed
+  ansible.builtin.apt:
+    name:
+      - sudo
+    state: present
+    update_cache: false
+
+# TODO: add log forwarding and default services

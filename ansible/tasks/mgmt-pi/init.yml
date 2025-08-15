@@ -9,7 +9,7 @@
     - rsyslog
     - iptables-persistent
     - minicom
-    - python3-paramiko
+    - yamllint
     state: present
     update_cache: true
   retries: 5

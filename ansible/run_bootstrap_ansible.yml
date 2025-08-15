@@ -1,0 +1,13 @@
+- name: Bootstrap SSH Access
+  hosts: all
+  gather_facts: true
+
+  pre_tasks:
+  - name: Runtime warning
+    fail:
+      msg: "Must specify target with --limit"
+    when: ansible_limit is not defined
+
+  roles:
+  - role: bootstrap_ansible
+    when: "'skip_bootstrap' not in group_names"

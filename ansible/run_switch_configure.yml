@@ -1,5 +1,6 @@
 - name: Configure the core switch
   hosts: core_switch
+  connection: network_cli
   gather_facts: no
 
   tasks:
