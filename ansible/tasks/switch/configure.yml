@@ -1,12 +1,19 @@
 # Configures the switch for use in the lab environment
-## Implement everything that we set manually during initial setup; enforces idempotency
-## Configs not implemented to avoid rollback issues:
-## - set root password
-## - configure ansible user
+# Implement everything that we set manually during initial setup; enforces idempotency
+# Configs not implemented to avoid rollback issues:
+# - set root password
+# - configure ansible user
 
-- name: Set hostname and domain and grab a backup
+- name: Grab a backup
   junipernetworks.junos.junos_config:
     backup: true
+    backup_options: {
+      filename: switch_config_backup.txt,
+      dir_path: /home/james/
+    }
+
+- name: Set hostname and domain
+  junipernetworks.junos.junos_config:
     lines:
     - set system host-name switch
     - set system domain-name indef.space
@@ -42,9 +49,9 @@
     - set interfaces ge0/0/39 description "Management Pi"
     - set interfaces ge0/0/39 unit 0 family ethernet-switching port-mode access vlan members mgmt
 
-## END BASELINE CONFIG ##
+# ** END BASELINE CONFIG **
 
-## Restrict access to the management terminal
+# Restrict access to the management terminal
 - name: Create Firewall Filter for the management interface
   junipernetworks.junos.junos_config:
     lines:
@@ -56,41 +63,41 @@
     - set firewall family inet filter mgmt_only term allow_icmp from source-address 10.0.99.0/24
     - set firewall family inet filter mgmt_only term allow_icmp from protocol icmp
     - set firewall family inet filter mgmt_only term allow_icmp from icmp-type echo-request
-    - set firewall family inet filter mgmt_only term allow_icmp then allow
+    - set firewall family inet filter mgmt_only term allow_icmp then accept
     - set firewall family inet filter mgmt_only term default_deny then discard
 
-## Create the VLANs and interfaces
+# Create the VLANs and interfaces
 - name: Create core VLAN
   junipernetworks.junos.junos_config:
     lines:
-    - set vlans core 20
+    - set vlans core vlan-id 20
     - set vlans core description "Core Services"
 
 - name: Create user VLAN
   junipernetworks.junos.junos_config:
     lines:
-    - set vlans user 40
+    - set vlans user vlan-id 40
     - set vlans user description "User Space"
 
 - name: Create DMZ VLAN
   junipernetworks.junos.junos_config:
     lines:
-    - set vlans dmz 30
+    - set vlans dmz vlan-id 30
     - set vlans dmz description "DMZ"
 
 - name: Create External VLAN
   junipernetworks.junos.junos_config:
     lines:
-    - set vlans ext 10
-    - set vlans ext "External"
+    - set vlans ext vlan-id 10
+    - set vlans ext description "External"
 
 - name: Create Open VLAN
   junipernetworks.junos.junos_config:
     lines:
-    - set vlans open 1
-    - set vlans open "Open"
+    - set vlans open vlan-id 1
+    - set vlans open description "Open"
 
-## Configure access and trunk ports
+# Configure access and trunk ports
 - name: Configure iDRAC ports
   junipernetworks.junos.junos_config:
     lines:
@@ -131,8 +138,8 @@
 - name: Configure Router ports
   junipernetworks.junos.junos_config:
     lines:
-    - set interfaces ge0/0/16 desccription "External Router"
-    - set interfaces ge0/0/16 unit 0 family ethernet-switching port-mode access vlan members ext
+    - set interfaces ge0/0/20 description "External Router"
+    - set interfaces ge0/0/20 unit 0 family ethernet-switching port-mode access vlan members ext
     - set interfaces ge0/0/41 description "Router OOB"
     - set interfaces ge0/0/41 unit 0 family ethernet-switching port-mode access vlan members mgmt
     - set interfaces ge0/0/6 description "Unprotected Router"
@@ -158,11 +165,9 @@
 
 - name: Disable unused ports
   junipernetworks.junos.junos_config:
-    parents: interface gigabitEthernet {{ item }}
     lines:
     - set interfaces ge0/0/{{ item }} disable
     - set interfaces ge0/0/{{ item }} description "** DISABLED **"
-    - shutdown
   loop:
   - 1
   - 3

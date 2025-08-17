@@ -10,6 +10,7 @@
     - iptables-persistent
     - minicom
     - yamllint
+    - netcat-traditional
     state: present
     update_cache: true
   retries: 5
