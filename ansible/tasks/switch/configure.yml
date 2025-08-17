@@ -4,7 +4,23 @@
 # - set root password
 # - configure ansible user
 
-- name: Grab a backup
+# Pre-Flight - make sure there aren't any uncommitted changes
+- name: Compare configuration
+  junipernetworks.junos.junos_rpc:
+    rpc: get-configuration
+    attrs:
+      compare: rollback
+      rollback: "0"
+      database: candidate
+      format: text
+  register: pending_changes
+
+- name: Check for pending changes
+  ansible.builtin.fail:
+    msg: "Uncommitted changes detected: {{ pending_changes.output[1:-1] }}"
+  when: pending_changes.output[1:-1] | length > 1
+
+- name: Grab a backup and zeroize the config
   junipernetworks.junos.junos_config:
     backup: true
     backup_options: {
