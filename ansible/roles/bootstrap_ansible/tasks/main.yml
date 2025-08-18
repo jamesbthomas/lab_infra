@@ -1,33 +1,12 @@
-- name: Create default user
-  ansible.builtin.user:
-    name: "{{ bootstrap_user }}"
-    shell: "{{ bootstrap_user_shell }}"
-    state: present
+- name: Route for Linux
+  include_tasks: linux.yml
+  when:
+  - platform == "linux"
 
-- name: Deploy public key
-  ansible.posix.authorized_key:
-    user: ansible
-    key: "{{ lookup('file', bootstrap_user_pubkey) }}"
-    state: present
+- name: Route for Windows
+  include_tasks: windows.yml
+  when: platform == "windows"
 
-- name: Install sudo
-  ansible.builtin.apt:
-    name:
-    - sudo
-    state: present
-#    update_cache: yes
-  when: ansible_os_family != "Windows"
-
-- name: Add to sudoers group
-  ansible.builtin.lineinfile:
-    path: /etc/sudoers.d/{{ bootstrap_user }}
-    line: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD:ALL"
-    mode: "0440"
-    create: yes
-
-- name: Require Terminal Access
-  ansible.builtin.lineinfile:
-    path: /etc/sudoers.d/{{ bootstrap_user }}
-    line: "Defaults:{{ bootstrap_user }} !requiretty"
-    mode: "0440"
-    create: yes
+- name: Route for Juniper Devices
+  include_tasks: junos.yml
+  when: platform == "junos"

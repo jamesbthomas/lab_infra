@@ -11,3 +11,4 @@
   roles:
   - role: bootstrap_ansible
     when: "'skip_bootstrap' not in group_names"
+## skip_bootstrap should include all *_steady groups as well
