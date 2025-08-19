@@ -12,11 +12,12 @@
     key: "{{ lookup('file', bootstrap_user_pub_key_path) }}"
     state: present
 
-#- name: Install sudo
-#  ansible.builtin.apt:
-#    name:
-#    - sudo
-#    state: present
+- name: Install sudo
+  ansible.builtin.apt:
+    name:
+    - sudo
+    update_cache: true
+    state: present
 
 - name: Add to sudoers group
   ansible.builtin.lineinfile:
@@ -55,6 +56,7 @@
   - facts.ansible_facts.ansible_user_id != bootstrap_user
 
 - name: Ensure drop-in SSH configs are supported
+  become: true
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^\s*Include\s+/etc/ssh/sshd_config\.d/\*'
@@ -62,6 +64,7 @@
     insertafter: BOF
 
 - name: Enforce Key-Based Auth
+  become: true
   ansible.builtin.blockinfile:
     path: /etc/ssh/sshd_config.d/99-hardening.conf
     create: yes
@@ -73,12 +76,19 @@
       PubkeyAuthentication yes
 
 - name: Check SSHD Config
+  become: true
   ansible.builtin.command: /usr/sbin/sshd -t
   register: sshd_check
   changed_when: false
 
 - name: Reload SSHD
+  become: true
   ansible.builtin.systemd_service:
     name: sshd
     state: reloaded
   when: sshd_check.rc == 0
+
+# Additional tasks for sub-platforms
+- name: Bootstrap ProxMox Credentials
+  ansible.builtin.include_tasks: proxmox.yml
+  when: sub_platform == "proxmox"

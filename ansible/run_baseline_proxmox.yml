@@ -1,9 +1,0 @@
-# Runs the baseline_proxmox role
-
-- name: Apply ProxMox baseline
-  hosts: proxmox_steady
-  gather_facts: no
-  become: true
-
-  roles:
-  - role: baseline_proxmox

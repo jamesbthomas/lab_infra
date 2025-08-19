@@ -1,4 +1,4 @@
-# Handlers for the baseline_proxmox role
+# Handlers for the baseline role
 
 - name: Reload sshd
   ansible.builtin.service:
@@ -8,3 +8,7 @@
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: true
+
+- name: Reload interface configurations
+  ansible.builtin.shell:
+    cmd: ifreload -a

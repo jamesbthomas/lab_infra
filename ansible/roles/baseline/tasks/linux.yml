@@ -1,0 +1,58 @@
+---
+# Assumes the bootstrap_ansible play has already been run and key-based auth is configured
+
+# SSH Config updates
+- name: Set Global SSH Restrictions
+  ansible.builtin.blockinfile:
+    prepend_newline: true
+    append_newline: true
+    path: /etc/ssh/sshd_config.d/99-hardening.conf
+    create: yes
+    block: |
+      AllowTcpForwarding no
+      PermitTunnel no
+      X11Forwarding no
+  notify: Reload sshd
+
+# TODO: disable root login over ssh once alternate breakglass account is setup
+
+- name: Set {{ ansible_user }} SSH Restrictions
+  ansible.builtin.blockinfile:
+    prepend_newline: true
+    append_newline: true
+    path: /etc/ssh/sshd_config.d/99-ansible_user.conf
+    create: yes
+    marker: "# {mark} ANSIBLE MANAGED BLOCK: ansible user restrictions"
+    block: "{{ lookup('template','sshd_match_block.j2') }}"
+  notify: Reload sshd
+
+# Ansible User Settings
+- name: Enforce no password for {{ ansible_user }}
+  ansible.builtin.command:
+    cmd: "passwd -d {{ ansible_user }}"
+  changed_when: false
+
+- name: Ensure {{ ansible_user }} has sudo access
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/{{ ansible_user }}
+    line: "{{ ansible_user }} ALL=(ALL) NOPASSWD:ALL"
+
+# Sub-platform specific routers
+- name: Implement ProxMox settings
+  ansible.builtin.include_tasks: proxmox.yml
+  when: sub_platform == "proxmox"
+
+# Implement network settings
+- name: Implement Bootstrap Network Settings
+  ansible.builtin.include_tasks: bootstrap_network.yml
+  when: "'bootstrap_steady' in groups"
+
+# Install packages
+- name: Ensure Sudo is installed
+  ansible.builtin.apt:
+    name:
+      - sudo
+    state: present
+    update_cache: false
+
+# TODO: add log forwarding and default services

@@ -89,6 +89,12 @@
     - set vlans core vlan-id 20
     - set vlans core description "Core Services"
 
+- name: Create Protected Services vlan
+  junipernetworks.junos.junos_config:
+    lines:
+    - set vlans core-protected vlan-id 21
+    - set vlans core description "Protected Services"
+
 - name: Create user VLAN
   junipernetworks.junos.junos_config:
     lines:
@@ -136,7 +142,7 @@
   junipernetworks.junos.junos_config:
     lines:
     - set interfaces ge0/0/{{ item.port }} description "Server{{ item.server }} NIC{{ item.nic }}"
-    - set interfaces ge0/0/{{ item.port }} unit 0 family ethernet-switching port-mode trunk vlan members [ core dmz user ]
+    - set interfaces ge0/0/{{ item.port }} unit 0 family ethernet-switching port-mode trunk vlan members [ core dmz user core-protected ]
   loop:
   - { port: "26", server: "1", nic: "4"}
   - { port: "28", server: "1", nic: "3"}
@@ -183,7 +189,7 @@
   junipernetworks.junos.junos_config:
     lines:
     - set interfaces ge0/0/24 description "Bootstrap Node"
-    - set interfaces ge0/0/24 unit 0 family ethernet-switching port-mode trunk vlan members [ core mgmt ]
+    - set interfaces ge0/0/24 unit 0 family ethernet-switching port-mode trunk vlan members [ core mgmt core-protected ]
 
 - name: Disable unused ports
   junipernetworks.junos.junos_config:
