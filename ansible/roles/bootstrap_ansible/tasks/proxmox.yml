@@ -87,3 +87,10 @@
 
 ## Bind ACLs for access
 
+- name: Bind token to ACLs
+  become: true
+  ansible.builtin.shell:
+    cmd: "pveum acl modify / -tokens '{{ api_username }}!{{ api_token_name }}' -role PVEVMAdmin"
+  changed_when: false
+## TODO: implement least privilege
+### Notes: Should bind on more restrictive paths with more restrictive roles for GitOps targets; potentially restrict to VM level (i.e., can't do GitOps for DCs to avoid breaking them)
