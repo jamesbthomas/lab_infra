@@ -1,0 +1,14 @@
+# Handlers for the baseline role
+
+- name: Reload sshd
+  ansible.builtin.service:
+    name: sshd
+    state: reloaded
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: Reload interface configurations
+  ansible.builtin.shell:
+    cmd: ifreload -a

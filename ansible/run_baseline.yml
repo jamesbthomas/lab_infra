@@ -1,0 +1,9 @@
+# Runs the baseline role
+
+- name: Apply Baseline
+  hosts: steady
+  gather_facts: no
+  become: true
+
+  roles:
+  - role: baseline

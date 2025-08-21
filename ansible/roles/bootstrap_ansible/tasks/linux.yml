@@ -1,0 +1,94 @@
+# Tasks to bootstrap key-based auth over SSH for ansible on Linux devices
+
+- name: Create default user
+  ansible.builtin.user:
+    name: "{{ bootstrap_user }}"
+    shell: "{{ bootstrap_user_shell }}"
+    state: present
+
+- name: Deploy public key
+  ansible.posix.authorized_key:
+    user: ansible
+    key: "{{ lookup('file', bootstrap_user_pub_key_path) }}"
+    state: present
+
+- name: Install sudo
+  ansible.builtin.apt:
+    name:
+    - sudo
+    update_cache: true
+    state: present
+
+- name: Add to sudoers group
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/{{ bootstrap_user }}
+    line: "{{ bootstrap_user }} ALL=(ALL) NOPASSWD:ALL"
+    mode: "0440"
+    create: yes
+
+- name: Require Terminal Access
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/{{ bootstrap_user }}
+    line: "Defaults:{{ bootstrap_user }} !requiretty"
+    mode: "0440"
+    create: yes
+
+- name: Prepare for Key-Based Auth Test
+  set_fact:
+    ansible_user: ansible
+    ansible_private_key_file: "{{ bootstrap_user_private_key_path }}"
+    ansible_ssh_common_args: "-o PreferredAuthentications=publickey -o PasswordAuthentication=no"
+
+- name: Reset Connection
+  ansible.builtin.meta: reset_connection
+
+- name: Test Key-Based Auth
+  ansible.builtin.setup:
+    gather_subset:
+    - network
+    - user
+  register: facts
+
+- name: Validate Key-Based Auth Test
+  ansible.builtin.fail:
+    msg: "Host {{ facts.ansible_facts.ansible_hostname }} is running as {{facts.ansible_facts.ansible_user_id }}"
+  when:
+  - facts.ansible_facts.ansible_user_id != bootstrap_user
+
+- name: Ensure drop-in SSH configs are supported
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*Include\s+/etc/ssh/sshd_config\.d/\*'
+    line: 'Include /etc/ssh/ssd_config.d/*'
+    insertafter: BOF
+
+- name: Enforce Key-Based Auth
+  become: true
+  ansible.builtin.blockinfile:
+    path: /etc/ssh/sshd_config.d/99-hardening.conf
+    create: yes
+    mode: '0644'
+    marker: "# {mark} ANSIBLE MANAGED: bootstrap_ansible"
+    block: |
+      PermitRootLogin no
+      PasswordAuthentication no
+      PubkeyAuthentication yes
+
+- name: Check SSHD Config
+  become: true
+  ansible.builtin.command: /usr/sbin/sshd -t
+  register: sshd_check
+  changed_when: false
+
+- name: Reload SSHD
+  become: true
+  ansible.builtin.systemd_service:
+    name: sshd
+    state: reloaded
+  when: sshd_check.rc == 0
+
+# Additional tasks for sub-platforms
+- name: Bootstrap ProxMox Credentials
+  ansible.builtin.include_tasks: proxmox.yml
+  when: sub_platform == "proxmox"

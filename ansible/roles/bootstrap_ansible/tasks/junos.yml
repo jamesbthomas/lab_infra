@@ -1,0 +1,29 @@
+- name: Add SSH Key Auth
+  junipernetworks.junos.junos_user:
+    name: "{{ bootstrap_user }}"
+    role: super-user
+    sshkey: "{{ lookup('file',bootstrap_user_pub_key_path) }}"
+    state: present
+
+- name: Prep for Key-Based Auth Test
+  set_fact:
+    ansible_private_key_file: "{{ bootstrap_user_private_key_path }}"
+    ansible_password: ""
+    ansible_ssh_common_args: "-o PreferredAuthentications=publickey -o PasswordAuthentication=no"
+
+- name: Reset Connection
+  ansible.builtin.meta: reset_connection
+
+- name: Test Key-Based Auth
+  junipernetworks.junos.junos_facts:
+  register: facts
+
+- name: Disable Password Auth
+  junipernetworks.junos.junos_config:
+    lines:
+    - delete system login user {{ bootstrap_user }} authentication encrypted-password
+    - set system services ssh no-passwords
+  when:
+  - facts is succeeded
+  - facts.ansible_facts is defined
+  - (facts.ansible_facts | length) > 0

@@ -1,0 +1,10 @@
+# Required Ansible collections
+## Each collection will include a reference to the role or playbook that requires it
+
+collections:
+# Added by the bootstrap_ansible role
+- name: ansible.posix
+# Added by the switch configuration task
+- name: junipernetworks.junos
+# Added by the bootstrap_ansible role
+- name: ansible.utils
