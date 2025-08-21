@@ -10,3 +10,11 @@ host_vars
 *.swp
 .idea/
 .vscode/
+
+# Draw.io files
+*.bkp
+*.dtmp
+
+# Protected files
+IPAM.xlsx
+*IPAM.xlsx
