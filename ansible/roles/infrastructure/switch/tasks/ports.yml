@@ -1,0 +1,23 @@
+- name: Set Description
+  junipernetworks.junos.junos_config:
+    lines:
+    - set interfaces {{ port_prefix }}{{ port_number }} description "{{ item.description }}"
+- name: Set Trunk Configs
+  junipernetworks.junos.junos_config:
+    lines:
+    - set interfaces {{ port_prefix }}{{ port_number }} unit 0 family ethernet-switching port-mode trunk vlan members {{ item.trunk }}
+  when: "item.trunk is defined"
+- name: Set Access Configs
+  junipernetworks.junos.junos_config:
+    lines:
+    - set interfaces {{ port_prefix }}{{ port_number }} unit 0 family ethernet-switching port-mode access vlan members {{ item.access }}
+  when:
+  - item.trunk is not defined
+  - item.access is defined
+- name: Disable Port
+  junipernetworks.junos.junos_config:
+    lines:
+    - set interfaces {{ port_prefix }}{{ port_number }} disable
+  when:
+  - item.trunk is not defined
+  - item.access is not defined
