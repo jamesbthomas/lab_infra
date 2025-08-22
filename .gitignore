@@ -4,6 +4,7 @@ host_vars
 *.retry
 *.log
 *.cfg
+*.conf
 
 # Ignore OS/editor/system files
 .DS_Store
