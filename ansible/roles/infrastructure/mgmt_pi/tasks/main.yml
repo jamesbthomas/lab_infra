@@ -1,36 +1,17 @@
-# Configure the management pi
-- name: Ensure basic packages are installed
-  apt:
-    name:
-    - python3-pip
-    - git
-    - curl
-    - gnupg
-    - rsyslog
-    - iptables-persistent
-    - minicom
-    - yamllint
-    - netcat-traditional
-    state: present
-    update_cache: true
-  retries: 5
-  delay: 10
-  register: result
-  until: result is success
-  environment:
-    DEBIAN_FRONTEND: noninteractive
 - name: Disable Wi-Fi and Bluetooth
-  copy:
+  ansible.builtin.copy:
     dest: /etc/modprobe.d/disable-wireless.conf
     content: |
       blacklist brcmfmac
       blacklist brcmutil
       blacklist bluetooth
       blacklist btusb
+
 - name: Enable rsyslog service
-  shell: sudo systemctl enable --now rsyslog
+  ansible.builtin.shell: sudo systemctl enable --now rsyslog
+
 - name: Set iptables to allow outbound only
-  shell: |
+  ansible.builtin.shell: |
     # Clear existing IPTables config
     iptables -F
     iptables -X
@@ -51,6 +32,7 @@
     iptables -P FORWARD DROP
     iptables -P OUTPUT ACCEPT
   become: true
+
 - name: Save iptables rules for persistence
-  shell: iptables-save > /etc/iptables/rules.v4
   become: true
+  ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4

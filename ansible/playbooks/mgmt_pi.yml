@@ -1,0 +1,18 @@
+- name: Bootstrap the management pi
+  hosts: mgmt_pi
+  become: true
+  gather_facts: false
+
+  tasks:
+
+  - name: package
+    ansible.builtin.include_role:
+      name: roles/portable/software
+      tasks_from: linux.yml
+    tags: [software]
+
+  - name: base
+    ansible.builtin.include_role:
+      name: roles/infrastructure/mgmt_pi
+      tasks_from: main.yml
+    tags: [base]
